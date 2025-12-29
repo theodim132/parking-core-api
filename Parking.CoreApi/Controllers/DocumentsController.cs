@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Parking.CoreApi.Data;
 using Parking.CoreApi.Dtos;
-using Parking.CoreApi.Models;
 using Parking.CoreApi.Services;
 
 namespace Parking.CoreApi.Controllers;
@@ -11,70 +8,42 @@ namespace Parking.CoreApi.Controllers;
 [Route("api")]
 public sealed class DocumentsController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly IObjectStorage _storage;
+    private readonly IDocumentService _service;
 
-    public DocumentsController(AppDbContext db, IObjectStorage storage)
+    public DocumentsController(IDocumentService service)
     {
-        _db = db;
-        _storage = storage;
+        _service = service;
     }
 
     [HttpPost("applications/{id:guid}/documents")]
     public async Task<ActionResult<DocumentUploadResponse>> Upload(Guid id, IFormFile file, CancellationToken ct)
     {
-        if (file.Length <= 0)
-        {
-            return BadRequest("Empty file.");
-        }
-
         var citizenId = GetCitizenId();
-        var app = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id && a.CitizenId == citizenId, ct);
-        if (app is null)
+        var result = await _service.UploadAsync(id, citizenId, file, ct);
+        if (result.Success)
         {
-            return NotFound();
+            return Ok(result.Value);
         }
 
-        if (app.Status != ApplicationStatus.Draft)
+        return result.Code switch
         {
-            return BadRequest("Documents can only be uploaded for draft applications.");
-        }
-
-        await using var stream = file.OpenReadStream();
-        var key = await _storage.UploadAsync(stream, file.FileName, file.ContentType, ct);
-
-        var doc = new ApplicationDocument
-        {
-            ApplicationId = app.Id,
-            FileName = file.FileName,
-            ContentType = file.ContentType ?? "application/octet-stream",
-            StorageKey = key,
-            SizeBytes = file.Length,
-            UploadedAt = DateTimeOffset.UtcNow
+            "NotFound" => NotFound(result.Error),
+            "InvalidState" => BadRequest(result.Error),
+            "Validation" => BadRequest(result.Error),
+            _ => BadRequest(result.Error)
         };
-
-        _db.Documents.Add(doc);
-        await _db.SaveChangesAsync(ct);
-
-        return Ok(new DocumentUploadResponse
-        {
-            Id = doc.Id,
-            FileName = doc.FileName,
-            StorageKey = doc.StorageKey
-        });
     }
 
     [HttpGet("documents/{id:guid}")]
     public async Task<ActionResult> Download(Guid id, CancellationToken ct)
     {
-        var doc = await _db.Documents.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id, ct);
-        if (doc is null)
+        var result = await _service.DownloadAsync(id, ct);
+        if (!result.Success || result.Value is null)
         {
-            return NotFound();
+            return result.Code == "NotFound" ? NotFound(result.Error) : BadRequest(result.Error);
         }
 
-        var stream = await _storage.DownloadAsync(doc.StorageKey, ct);
-        return File(stream, doc.ContentType, doc.FileName);
+        return File(result.Value.Stream, result.Value.ContentType, result.Value.FileName);
     }
 
     private string GetCitizenId()

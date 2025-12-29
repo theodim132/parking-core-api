@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Parking.CoreApi.Data;
 using Parking.CoreApi.Dtos;
 using Parking.CoreApi.Models;
+using Parking.CoreApi.Services;
 
 namespace Parking.CoreApi.Controllers;
 
@@ -10,61 +9,40 @@ namespace Parking.CoreApi.Controllers;
 [Route("api/admin/applications")]
 public sealed class AdminApplicationsController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IApplicationService _service;
 
-    public AdminApplicationsController(AppDbContext db)
+    public AdminApplicationsController(IApplicationService service)
     {
-        _db = db;
+        _service = service;
     }
 
     [HttpGet]
     public async Task<ActionResult<List<ParkingPermitApplication>>> Get([FromQuery] ApplicationStatus? status, CancellationToken ct)
     {
-        var query = _db.Applications.AsNoTracking();
-        if (status.HasValue)
-        {
-            query = query.Where(a => a.Status == status.Value);
-        }
-
-        var apps = await query.OrderByDescending(a => a.CreatedAt).ToListAsync(ct);
+        var apps = await _service.GetAdminListAsync(status, ct);
         return Ok(apps);
     }
 
     [HttpPost("{id:guid}/decision")]
     public async Task<ActionResult> Decide(Guid id, [FromBody] AdminDecisionRequest request, CancellationToken ct)
     {
-        if (request.Status != ApplicationStatus.Approved && request.Status != ApplicationStatus.Rejected)
+        var result = await _service.DecideAsync(id, request, ct);
+        return MapResult(result);
+    }
+
+    private ActionResult MapResult(ServiceResult result)
+    {
+        if (result.Success)
         {
-            return BadRequest("Status must be Approved or Rejected.");
+            return NoContent();
         }
 
-        var app = await _db.Applications.FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (app is null)
+        return result.Code switch
         {
-            return NotFound();
-        }
-
-        if (app.Status != ApplicationStatus.Submitted)
-        {
-            return BadRequest("Only submitted applications can be decided.");
-        }
-
-        app.Status = request.Status;
-        app.UpdatedAt = DateTimeOffset.UtcNow;
-
-        var decisionText = request.Status == ApplicationStatus.Approved ? "approved" : "rejected";
-        var reason = string.IsNullOrWhiteSpace(request.Reason) ? string.Empty : $" Reason: {request.Reason}";
-
-        _db.OutboxEmails.Add(new OutboxEmail
-        {
-            ToEmail = app.Email,
-            Subject = $"Application {decisionText}",
-            Body = $"Your parking permit application {app.Id} was {decisionText}.{reason}",
-            Status = "Pending",
-            CreatedAt = DateTimeOffset.UtcNow
-        });
-
-        await _db.SaveChangesAsync(ct);
-        return NoContent();
+            "NotFound" => NotFound(result.Error),
+            "InvalidState" => BadRequest(result.Error),
+            "Validation" => BadRequest(result.Error),
+            _ => BadRequest(result.Error)
+        };
     }
 }
