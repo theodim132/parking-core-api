@@ -17,7 +17,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        sh 'dotnet test -c Release --no-build --logger trx || true'
+        sh 'dotnet test ../Parking.CoreApi.Tests -c Release --logger trx'
       }
     }
     stage('Docker Build') {
