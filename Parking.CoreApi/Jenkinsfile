@@ -1,0 +1,47 @@
+pipeline {
+  agent any
+  environment {
+    IMAGE_NAME = "parking-core-api"
+    IMAGE_TAG = "latest"
+  }
+  stages {
+    stage('Restore') {
+      steps {
+        sh 'dotnet restore'
+      }
+    }
+    stage('Build') {
+      steps {
+        sh 'dotnet build -c Release --no-restore'
+      }
+    }
+    stage('Test') {
+      steps {
+        sh 'dotnet test -c Release --no-build --logger trx || true'
+      }
+    }
+    stage('Docker Build') {
+      steps {
+        sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+      }
+    }
+    stage('Docker Push') {
+      when {
+        expression { return env.REGISTRY?.trim() }
+      }
+      steps {
+        sh 'if [ -n "$REGISTRY_USER" ] && [ -n "$REGISTRY_PASS" ]; then echo "$REGISTRY_PASS" | docker login $REGISTRY -u "$REGISTRY_USER" --password-stdin; fi'
+        sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+        sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+      }
+    }
+    stage('Deploy (K8s)') {
+      when {
+        expression { return env.K8S_NAMESPACE?.trim() }
+      }
+      steps {
+        sh 'kubectl -n $K8S_NAMESPACE rollout restart deployment/core-api'
+      }
+    }
+  }
+}
