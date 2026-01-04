@@ -1,0 +1,85 @@
+@page "/admin"
+@model Parking.CoreApi.Pages.Admin.IndexModel
+@using Parking.CoreApi.Models
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Parking Permits</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f7f7; }
+    h1 { margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    form { margin: 0; display: inline; }
+    .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; background: #eee; }
+    .actions button { margin-right: 6px; }
+    .filter { margin: 12px 0; }
+  </style>
+</head>
+<body>
+  <h1>Admin - Parking Permit Applications</h1>
+  <div class="filter">
+    <form method="get">
+      <label>Status:</label>
+      <select name="status">
+        <option value="">All</option>
+        @foreach (var status in Model.StatusOptions)
+        {
+          <option value="@status" selected="@(Model.SelectedStatus == status ? "selected" : null)">@status</option>
+        }
+      </select>
+      <button type="submit">Filter</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Citizen</th>
+        <th>Full Name</th>
+        <th>Plate</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    @foreach (var app in Model.Applications)
+    {
+      <tr>
+        <td>@app.Id</td>
+        <td>@app.CitizenId</td>
+        <td>@app.FullName</td>
+        <td>@app.PlateNumber</td>
+        <td><span class="badge">@app.Status</span></td>
+        <td>@app.CreatedAt.UtcDateTime.ToString("u")</td>
+        <td class="actions">
+          @if (app.Status == ApplicationStatus.Submitted)
+          {
+            <form method="post">
+              <input type="hidden" name="id" value="@app.Id" />
+              <input type="hidden" name="decision" value="Approved" />
+              <button type="submit">Approve</button>
+            </form>
+            <form method="post">
+              <input type="hidden" name="id" value="@app.Id" />
+              <input type="hidden" name="decision" value="Rejected" />
+              <button type="submit">Reject</button>
+            </form>
+          }
+          else
+          {
+            <span>-</span>
+          }
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</body>
+</html>
