@@ -43,18 +43,10 @@ pipeline {
       steps {
         dir("$INFRA_DIR") {
           deleteDir()
-        }
-        script {
-          if (env.GIT_CREDENTIALS_ID?.trim()) {
-            dir("$INFRA_DIR") {
-              checkout([$class: 'GitSCM',
-                branches: [[name: '*/master']],
-                userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: env.GIT_CREDENTIALS_ID]]
-              ])
-            }
-          } else {
-            sh "git clone $INFRA_REPO $INFRA_DIR"
-          }
+          checkout([$class: 'GitSCM',
+            branches: [[name: '*/master']],
+            userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: env.GIT_CREDENTIALS_ID]]
+          ])
         }
         sh "ansible-playbook -i $INFRA_DIR/ansible/inventories/dev/hosts.ini $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"
       }
