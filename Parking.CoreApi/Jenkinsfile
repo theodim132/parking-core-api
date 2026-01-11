@@ -48,7 +48,7 @@ pipeline {
             userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: '39aaae8f-ea94-4bf7-88a9-1bc9f29b36a6']]
           ])
         }
-        sh "ansible-playbook -i $INFRA_DIR/ansible/inventories/dev/hosts.ini $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"
+        sh "ansible-playbook -i $INFRA_DIR/ansible/inventories/dev/hosts.ini -e k8s_namespace=$K8S_NAMESPACE $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"
       }
     }
     stage('Docker Push') {
