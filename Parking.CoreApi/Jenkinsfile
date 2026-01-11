@@ -7,22 +7,30 @@ pipeline {
   stages {
     stage('Restore') {
       steps {
-        sh 'dotnet restore'
+        dir('Parking.CoreApi') {
+          sh 'dotnet restore'
+        }
       }
     }
     stage('Build') {
       steps {
-        sh 'dotnet build -c Release --no-restore'
+        dir('Parking.CoreApi') {
+          sh 'dotnet build -c Release --no-restore'
+        }
       }
     }
     stage('Test') {
       steps {
-        sh 'dotnet test ../Parking.CoreApi.Tests -c Release --logger trx'
+        dir('Parking.CoreApi.Tests') {
+          sh 'dotnet test -c Release --logger trx'
+        }
       }
     }
     stage('Docker Build') {
       steps {
-        sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+        dir('Parking.CoreApi') {
+          sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+        }
       }
     }
     stage('Docker Push') {
