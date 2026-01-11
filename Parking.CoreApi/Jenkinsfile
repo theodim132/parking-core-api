@@ -3,6 +3,9 @@ pipeline {
   environment {
     IMAGE_NAME = "parking-core-api"
     IMAGE_TAG = "latest"
+    INFRA_REPO = "https://github.com/theodim132/parking-infra.git"
+    INFRA_DIR = "infra"
+    GIT_CREDENTIALS_ID = ""
   }
   stages {
     stage('Restore') {
@@ -31,6 +34,29 @@ pipeline {
         dir('Parking.CoreApi') {
           sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
         }
+      }
+    }
+    stage('Ansible K8s Deploy') {
+      when {
+        expression { return env.K8S_NAMESPACE?.trim() }
+      }
+      steps {
+        dir("$INFRA_DIR") {
+          deleteDir()
+        }
+        script {
+          if (env.GIT_CREDENTIALS_ID?.trim()) {
+            dir("$INFRA_DIR") {
+              checkout([$class: 'GitSCM',
+                branches: [[name: '*/master']],
+                userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: env.GIT_CREDENTIALS_ID]]
+              ])
+            }
+          } else {
+            sh "git clone $INFRA_REPO $INFRA_DIR"
+          }
+        }
+        sh "ansible-playbook -i $INFRA_DIR/ansible/inventories/dev/hosts.ini $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"
       }
     }
     stage('Docker Push') {
