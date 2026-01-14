@@ -5,7 +5,7 @@ pipeline {
     IMAGE_TAG = "latest"
     REGISTRY = "172.20.173.171:32000"
     K8S_NAMESPACE = "parking"
-    ANSIBLE_HOST = "127.0.0.1"
+    ANSIBLE_HOST = "host.docker.internal"
     ANSIBLE_PORT = "2222"
     INFRA_REPO = "https://github.com/theodim132/parking-infra.git"
     INFRA_DIR = "infra"
