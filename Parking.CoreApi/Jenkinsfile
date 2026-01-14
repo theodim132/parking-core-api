@@ -3,9 +3,12 @@ pipeline {
   environment {
     IMAGE_NAME = "parking-core-api"
     IMAGE_TAG = "latest"
+    REGISTRY = "172.20.173.171:32000"
+    K8S_NAMESPACE = "parking"
+    ANSIBLE_HOST = "172.20.173.171"
     INFRA_REPO = "https://github.com/theodim132/parking-infra.git"
     INFRA_DIR = "infra"
-    GIT_CREDENTIALS_ID = ""
+    GIT_CREDENTIALS_ID = "39aaae8f-ea94-4bf7-88a9-1bc9f29b36a6"
   }
   stages {
     stage('Restore') {
@@ -45,10 +48,16 @@ pipeline {
           deleteDir()
           checkout([$class: 'GitSCM',
             branches: [[name: '*/master']],
-            userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: '39aaae8f-ea94-4bf7-88a9-1bc9f29b36a6']]
+            userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: env.GIT_CREDENTIALS_ID]]
           ])
         }
-        sh "ansible-playbook -i $INFRA_DIR/ansible/inventories/dev/hosts.ini -e k8s_namespace=parking $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"
+        sh """ansible-playbook \
+ -i \"$ANSIBLE_HOST,\" \
+ -u theodim \
+ --private-key /var/jenkins_home/.ssh/id_ed25519 \
+ --ssh-common-args='-o StrictHostKeyChecking=no' \
+ -e k8s_namespace=$K8S_NAMESPACE \
+ $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"""
       }
     }
     stage('Docker Push') {
@@ -59,14 +68,6 @@ pipeline {
         sh 'if [ -n "$REGISTRY_USER" ] && [ -n "$REGISTRY_PASS" ]; then echo "$REGISTRY_PASS" | docker login $REGISTRY -u "$REGISTRY_USER" --password-stdin; fi'
         sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
         sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
-      }
-    }
-    stage('Deploy (K8s)') {
-      when {
-        expression { return env.K8S_NAMESPACE?.trim() }
-      }
-      steps {
-        sh 'kubectl -n $K8S_NAMESPACE rollout restart deployment/core-api'
       }
     }
   }
