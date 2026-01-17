@@ -3,10 +3,9 @@ pipeline {
   environment {
     IMAGE_NAME = "parking-core-api"
     IMAGE_TAG = "latest"
-    REGISTRY = "172.20.173.171:32000"
+    REGISTRY = "localhost:32000"
     K8S_NAMESPACE = "parking"
-    ANSIBLE_HOST = "host.docker.internal"
-    ANSIBLE_PORT = "2222"
+    ANSIBLE_HOST = "localhost"
     INFRA_REPO = "https://github.com/theodim132/parking-infra.git"
     INFRA_DIR = "infra"
     GIT_CREDENTIALS_ID = "39aaae8f-ea94-4bf7-88a9-1bc9f29b36a6"
@@ -54,10 +53,7 @@ pipeline {
         }
         sh """ansible-playbook \
  -i \"$ANSIBLE_HOST,\" \
- -u theodim \
- -e ansible_port=$ANSIBLE_PORT \
- --private-key /var/jenkins_home/.ssh/id_ed25519 \
- --ssh-common-args='-o StrictHostKeyChecking=no' \
+ -c local \
  -e k8s_namespace=$K8S_NAMESPACE \
  $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"""
       }
