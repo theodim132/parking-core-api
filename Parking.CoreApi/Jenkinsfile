@@ -2,13 +2,9 @@ pipeline {
   agent any
   environment {
     IMAGE_NAME = "parking-core-api"
-    IMAGE_TAG = "latest"
+    IMAGE_TAG = "${env.BUILD_NUMBER ?: 'latest'}"
     REGISTRY = "localhost:32000"
     K8S_NAMESPACE = "parking"
-    ANSIBLE_HOST = "localhost"
-    INFRA_REPO = "https://github.com/theodim132/parking-infra.git"
-    INFRA_DIR = "infra"
-    GIT_CREDENTIALS_ID = "39aaae8f-ea94-4bf7-88a9-1bc9f29b36a6"
   }
   stages {
     stage('Restore') {
@@ -32,40 +28,19 @@ pipeline {
         }
       }
     }
-    stage('Docker Build') {
+    stage('Docker Build & Push') {
       steps {
         dir('Parking.CoreApi') {
           sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+          sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+          sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
         }
       }
     }
-    stage('Ansible K8s Deploy') {
-      when {
-        expression { return env.K8S_NAMESPACE?.trim() }
-      }
+    stage('Deploy to Kubernetes') {
       steps {
-        dir("$INFRA_DIR") {
-          deleteDir()
-          checkout([$class: 'GitSCM',
-            branches: [[name: '*/master']],
-            userRemoteConfigs: [[url: env.INFRA_REPO, credentialsId: env.GIT_CREDENTIALS_ID]]
-          ])
-        }
-        sh """ansible-playbook \
- -i \"$ANSIBLE_HOST,\" \
- -c local \
- -e k8s_namespace=$K8S_NAMESPACE \
- $INFRA_DIR/ansible/playbooks/k8s-deploy.yml"""
-      }
-    }
-    stage('Docker Push') {
-      when {
-        expression { return env.REGISTRY?.trim() }
-      }
-      steps {
-        sh 'if [ -n "$REGISTRY_USER" ] && [ -n "$REGISTRY_PASS" ]; then echo "$REGISTRY_PASS" | docker login $REGISTRY -u "$REGISTRY_USER" --password-stdin; fi'
-        sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
-        sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+        sh 'microk8s kubectl set image deployment/core-api core-api=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG -n $K8S_NAMESPACE'
+        sh 'microk8s kubectl rollout status deployment/core-api -n $K8S_NAMESPACE --timeout=2m'
       }
     }
   }
