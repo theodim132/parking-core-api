@@ -103,14 +103,21 @@ builder.Services.AddAuthentication(options =>
         options.ClientSecret = builder.Configuration["Auth:ClientSecret"];
         options.ResponseType = "code";
         options.UsePkce = true;
+        options.UsePushedAuthorization = false;
+        options.ResponseMode = "query";
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
-        options.RequireHttpsMetadata = false;
+        options.RequireHttpsMetadata = true;
         options.CallbackPath = "/signin-oidc";
         options.Scope.Clear();
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
+        options.Events.OnRedirectToIdentityProvider = context =>
+        {
+            context.ProtocolMessage.Parameters.Remove("request_uri");
+            return Task.CompletedTask;
+        };
     })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
