@@ -28,6 +28,22 @@ pipeline {
         }
       }
     }
+    stage('Migrate Database') {
+      steps {
+        dir('Parking.CoreApi') {
+          sh '''
+            set -e
+            POSTGRES_PASSWORD=$(microk8s kubectl get secret parking-secrets -n $K8S_NAMESPACE -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)
+            microk8s kubectl port-forward -n $K8S_NAMESPACE svc/postgres 5432:5432 >/tmp/pg-port-forward.log 2>&1 &
+            PF_PID=$!
+            trap "kill $PF_PID" EXIT
+            sleep 3
+            dotnet tool install --tool-path ./.dotnet-tools dotnet-ef
+            ./.dotnet-tools/dotnet-ef database update --connection "Host=127.0.0.1;Port=5432;Database=parking;Username=parking;Password=$POSTGRES_PASSWORD"
+          '''
+        }
+      }
+    }
     stage('Docker Build & Push') {
       steps {
         dir('Parking.CoreApi') {
