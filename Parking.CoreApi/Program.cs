@@ -107,6 +107,7 @@ builder.Services.AddAuthentication(options =>
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
         options.RequireHttpsMetadata = true;
+        options.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Disable;
         options.CallbackPath = "/signin-oidc";
         options.Scope.Clear();
         options.Scope.Add("openid");
