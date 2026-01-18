@@ -103,7 +103,6 @@ builder.Services.AddAuthentication(options =>
         options.ClientSecret = builder.Configuration["Auth:ClientSecret"];
         options.ResponseType = "code";
         options.UsePkce = true;
-        options.UsePushedAuthorization = false;
         options.ResponseMode = "query";
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
