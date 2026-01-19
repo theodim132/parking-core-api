@@ -5,6 +5,7 @@ pipeline {
     IMAGE_TAG = "${env.BUILD_NUMBER ?: 'latest'}"
     REGISTRY = "localhost:32000"
     K8S_NAMESPACE = "parking"
+    INFRA_DEPLOY_JOB = "${env.INFRA_DEPLOY_JOB ?: ''}"
   }
   stages {
     stage('Restore') {
@@ -55,10 +56,15 @@ pipeline {
         }
       }
     }
-    stage('Deploy to Kubernetes') {
+    stage('Trigger Infra Deploy') {
+      when {
+        expression { return env.INFRA_DEPLOY_JOB?.trim() }
+      }
       steps {
-        sh 'microk8s kubectl set image deployment/core-api core-api=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG -n $K8S_NAMESPACE'
-        sh 'microk8s kubectl rollout status deployment/core-api -n $K8S_NAMESPACE --timeout=2m'
+        build job: env.INFRA_DEPLOY_JOB, wait: true, parameters: [
+          string(name: 'CORE_API_TAG', value: env.IMAGE_TAG),
+          string(name: 'EMAIL_WORKER_TAG', value: 'latest')
+        ]
       }
     }
   }
