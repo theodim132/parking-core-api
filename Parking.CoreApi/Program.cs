@@ -1,4 +1,5 @@
 using System.IO;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +10,9 @@ using Microsoft.Extensions.Options;
 using Parking.CoreApi.Data;
 using Parking.CoreApi.Repositories;
 using Parking.CoreApi.Services;
+using System.Text.Json;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +45,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Apply");
-    options.Conventions.AuthorizeFolder("/Admin");
+    options.Conventions.AuthorizeFolder("/Admin", "AdminOnly");
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -114,9 +118,42 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "name",
+            RoleClaimType = ClaimTypes.Role
+        };
         options.Events.OnRedirectToIdentityProvider = context =>
         {
             context.ProtocolMessage.Parameters.Remove("request_uri");
+            return Task.CompletedTask;
+        };
+        options.Events.OnTokenValidated = context =>
+        {
+            if (context.SecurityToken is JwtSecurityToken jwt)
+            {
+                var realmAccess = jwt.Claims.FirstOrDefault(c => c.Type == "realm_access")?.Value;
+                if (!string.IsNullOrWhiteSpace(realmAccess))
+                {
+                    using var doc = JsonDocument.Parse(realmAccess);
+                    if (doc.RootElement.TryGetProperty("roles", out var roles) &&
+                        roles.ValueKind == JsonValueKind.Array)
+                    {
+                        var identity = (ClaimsIdentity?)context.Principal?.Identity;
+                        if (identity != null)
+                        {
+                            foreach (var role in roles.EnumerateArray())
+                            {
+                                var value = role.GetString();
+                                if (!string.IsNullOrWhiteSpace(value))
+                                {
+                                    identity.AddClaim(new Claim(ClaimTypes.Role, value));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return Task.CompletedTask;
         };
     })
@@ -126,7 +163,10 @@ builder.Services.AddAuthentication(options =>
         options.Audience = builder.Configuration["Auth:Audience"];
         options.RequireHttpsMetadata = false;
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
+});
 
 var app = builder.Build();
 
