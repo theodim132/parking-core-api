@@ -51,6 +51,7 @@
       }
 
       <form method="post">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="All" class="error"></div>
         <div class="grid">
           <div>

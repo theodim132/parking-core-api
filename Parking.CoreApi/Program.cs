@@ -41,6 +41,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Apply");
+    options.Conventions.AuthorizeFolder("/Admin");
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>

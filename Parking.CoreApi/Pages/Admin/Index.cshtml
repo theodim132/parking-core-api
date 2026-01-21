@@ -62,11 +62,13 @@
           @if (app.Status == ApplicationStatus.Submitted)
           {
             <form method="post">
+              @Html.AntiForgeryToken()
               <input type="hidden" name="id" value="@app.Id" />
               <input type="hidden" name="decision" value="Approved" />
               <button type="submit">Approve</button>
             </form>
             <form method="post">
+              @Html.AntiForgeryToken()
               <input type="hidden" name="id" value="@app.Id" />
               <input type="hidden" name="decision" value="Rejected" />
               <button type="submit">Reject</button>

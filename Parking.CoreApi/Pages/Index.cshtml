@@ -1,0 +1,32 @@
+@page "/"
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parking Permits</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+    .hero { max-width: 880px; margin: 72px auto; padding: 0 16px; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 28px; }
+    h1 { margin: 0 0 8px; color: #f8fafc; }
+    p { color: #cbd5f5; line-height: 1.6; }
+    .actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+    a.button { background: #38bdf8; color: #0f172a; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    a.secondary { background: #1f2937; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="card">
+      <h1>Parking Permit Portal</h1>
+      <p>Submit a new parking permit application or review existing submissions.</p>
+      <div class="actions">
+        <a class="button" href="/apply">Apply for a permit</a>
+        <a class="button secondary" href="/admin">Admin review</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
