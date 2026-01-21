@@ -118,6 +118,7 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
+        options.Scope.Add("roles");
         options.TokenValidationParameters = new TokenValidationParameters
         {
             NameClaimType = "name",
@@ -130,27 +131,49 @@ builder.Services.AddAuthentication(options =>
         };
         options.Events.OnTokenValidated = context =>
         {
-            if (context.SecurityToken is JwtSecurityToken jwt)
+            var identity = (ClaimsIdentity?)context.Principal?.Identity;
+            if (identity == null)
             {
-                var realmAccess = jwt.Claims.FirstOrDefault(c => c.Type == "realm_access")?.Value;
-                if (!string.IsNullOrWhiteSpace(realmAccess))
+                return Task.CompletedTask;
+            }
+
+            string? token = null;
+            if (!string.IsNullOrWhiteSpace(context.TokenEndpointResponse?.AccessToken))
+            {
+                token = context.TokenEndpointResponse!.AccessToken;
+            }
+            else if (!string.IsNullOrWhiteSpace(context.TokenEndpointResponse?.IdToken))
+            {
+                token = context.TokenEndpointResponse!.IdToken;
+            }
+            else if (context.SecurityToken is JwtSecurityToken jwtToken)
+            {
+                token = jwtToken.RawData;
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return Task.CompletedTask;
+            }
+
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            var realmAccess = jwt.Claims.FirstOrDefault(c => c.Type == "realm_access")?.Value;
+            if (string.IsNullOrWhiteSpace(realmAccess))
+            {
+                return Task.CompletedTask;
+            }
+
+            using var doc = JsonDocument.Parse(realmAccess);
+            if (doc.RootElement.TryGetProperty("roles", out var roles) &&
+                roles.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var role in roles.EnumerateArray())
                 {
-                    using var doc = JsonDocument.Parse(realmAccess);
-                    if (doc.RootElement.TryGetProperty("roles", out var roles) &&
-                        roles.ValueKind == JsonValueKind.Array)
+                    var value = role.GetString();
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
-                        var identity = (ClaimsIdentity?)context.Principal?.Identity;
-                        if (identity != null)
-                        {
-                            foreach (var role in roles.EnumerateArray())
-                            {
-                                var value = role.GetString();
-                                if (!string.IsNullOrWhiteSpace(value))
-                                {
-                                    identity.AddClaim(new Claim(ClaimTypes.Role, value));
-                                }
-                            }
-                        }
+                        identity.AddClaim(new Claim(ClaimTypes.Role, value));
                     }
                 }
             }
