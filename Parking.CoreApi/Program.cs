@@ -129,6 +129,20 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+var migrateOnly = builder.Configuration.GetValue<bool>("MIGRATE_ONLY");
+var migrateAtStartup = builder.Configuration.GetValue<bool>("MIGRATE_AT_STARTUP");
+
+if (migrateOnly || migrateAtStartup)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+    if (migrateOnly)
+    {
+        return;
+    }
+}
+
 app.UseForwardedHeaders();
 app.UseSwagger();
 app.UseSwaggerUI();
