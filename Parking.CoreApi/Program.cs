@@ -99,6 +99,7 @@ builder.Services.AddAuthentication(options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/access-denied";
     })
     .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
     {
