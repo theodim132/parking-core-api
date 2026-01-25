@@ -20,7 +20,7 @@ public sealed class LogoutModel : PageModel
     {
         var authority = _configuration["Auth:Authority"]?.TrimEnd('/');
         var clientId = _configuration["Auth:ClientId"] ?? "parking-ui";
-        var redirectUri = $"{Request.Scheme}://{Request.Host}/";
+        var redirectUri = _configuration["Auth:PostLogoutRedirectUri"];
         var idToken = await HttpContext.GetTokenAsync("id_token");
 
         foreach (var cookie in Request.Cookies.Keys)
@@ -52,7 +52,10 @@ public sealed class LogoutModel : PageModel
         {
             logoutUrl += $"&id_token_hint={Uri.EscapeDataString(idToken)}";
         }
-        logoutUrl += $"&post_logout_redirect_uri={Uri.EscapeDataString(redirectUri)}";
+        if (!string.IsNullOrWhiteSpace(redirectUri))
+        {
+            logoutUrl += $"&post_logout_redirect_uri={Uri.EscapeDataString(redirectUri)}";
+        }
 
         return Redirect(logoutUrl);
     }
