@@ -127,6 +127,12 @@ builder.Services.AddAuthentication(options =>
         };
         options.Events.OnRedirectToIdentityProvider = context =>
         {
+            if (context.Request.Cookies.ContainsKey("force_login"))
+            {
+                context.ProtocolMessage.Prompt = "login";
+                context.ProtocolMessage.MaxAge = "0";
+                context.Response.Cookies.Delete("force_login");
+            }
             context.ProtocolMessage.Parameters.Remove("request_uri");
             return Task.CompletedTask;
         };

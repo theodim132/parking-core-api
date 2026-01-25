@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,18 @@ public sealed class LogoutModel : PageModel
             Response.Cookies.Delete(cookie);
             Response.Cookies.Delete(cookie, new CookieOptions { Path = "/auth" });
         }
+
+        Response.Cookies.Append(
+            "force_login",
+            "1",
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                MaxAge = TimeSpan.FromMinutes(5)
+            });
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         if (string.IsNullOrWhiteSpace(authority))
