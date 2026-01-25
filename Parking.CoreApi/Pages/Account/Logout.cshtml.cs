@@ -1,15 +1,40 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
 
 namespace Parking.CoreApi.Pages.Account;
 
 public sealed class LogoutModel : PageModel
 {
+    private readonly IConfiguration _configuration;
+
+    public LogoutModel(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
     public async Task<IActionResult> OnGetAsync()
     {
+        var authority = _configuration["Auth:Authority"]?.TrimEnd('/');
+        var clientId = _configuration["Auth:ClientId"] ?? "parking-ui";
+        var redirectUri = $"{Request.Scheme}://{Request.Host}/";
+        var idToken = await HttpContext.GetTokenAsync("id_token");
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return Redirect("/");
+        if (string.IsNullOrWhiteSpace(authority))
+        {
+            return Redirect("/");
+        }
+
+        var logoutUrl = $"{authority}/protocol/openid-connect/logout?client_id={Uri.EscapeDataString(clientId)}";
+        if (!string.IsNullOrWhiteSpace(idToken))
+        {
+            logoutUrl += $"&id_token_hint={Uri.EscapeDataString(idToken)}";
+        }
+        logoutUrl += $"&post_logout_redirect_uri={Uri.EscapeDataString(redirectUri)}";
+
+        return Redirect(logoutUrl);
     }
 }
