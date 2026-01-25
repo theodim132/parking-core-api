@@ -22,6 +22,12 @@ public sealed class LogoutModel : PageModel
         var redirectUri = $"{Request.Scheme}://{Request.Host}/";
         var idToken = await HttpContext.GetTokenAsync("id_token");
 
+        foreach (var cookie in Request.Cookies.Keys)
+        {
+            Response.Cookies.Delete(cookie);
+            Response.Cookies.Delete(cookie, new CookieOptions { Path = "/auth" });
+        }
+
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         if (string.IsNullOrWhiteSpace(authority))
         {
