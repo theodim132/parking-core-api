@@ -1,41 +1,32 @@
 # parking-core-api
 
-ASP.NET Core Web API for Parking Permit applications.
+ASP.NET Core Web API for managing parking permit applications.
 
-## Tech
+## Stack
 - .NET 9
-- PostgreSQL (EF Core)
+- PostgreSQL + EF Core
 - Keycloak (OIDC)
-- Storage: Local or MinIO (S3-compatible)
+- MinIO for document storage
+
+## Run locally
+```bash
+dotnet run --project Parking.CoreApi
+```
 
 ## Configuration
-Set via `appsettings.json` or environment variables:
-- `ConnectionStrings__Default`
-- `Auth__Authority` (Keycloak realm URL)
-- `Auth__Audience` (client id, default: `parking-api`)
-- `Storage__Provider` (`Local` or `S3`)
-- `Storage__Endpoint`, `Storage__AccessKey`, `Storage__SecretKey`, `Storage__Bucket`
+Environment variables or `appsettings.json`:
+- `ConnectionStrings__Default` - PostgreSQL connection
+- `Auth__Authority` - Keycloak realm URL
+- `Storage__Provider` - `Local` or `S3`
 
-## Local run
-```
-dotnet run
-```
+## API
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/applications | List my applications |
+| POST | /api/applications | Create new application |
+| PUT | /api/applications/{id} | Update draft |
+| POST | /api/applications/{id}/submit | Submit for review |
+| POST | /api/admin/applications/{id}/decision | Approve/reject |
+| POST | /api/applications/{id}/documents | Upload document |
 
-## Migrations
-```
-dotnet ef database update
-```
-
-## API (basic)
-- `GET /api/applications`
-- `POST /api/applications`
-- `PUT /api/applications/{id}`
-- `POST /api/applications/{id}/submit`
-- `GET /api/applications/{id}`
-- `POST /api/admin/applications/{id}/decision`
-- `POST /api/applications/{id}/documents`
-- `GET /api/documents/{id}`
-
-Note: For demo, endpoints accept `X-Citizen-Id` header when no JWT is present.
-
-Webhook test.
+For testing, use `X-Citizen-Id` header instead of JWT.
