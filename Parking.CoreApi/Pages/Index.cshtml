@@ -5,28 +5,339 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Parking Permits</title>
+  <title>Parking Permit Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
-    .hero { max-width: 880px; margin: 72px auto; padding: 0 16px; }
-    .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 28px; }
-    h1 { margin: 0 0 8px; color: #f8fafc; }
-    p { color: #cbd5f5; line-height: 1.6; }
-    .actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
-    a.button { background: #38bdf8; color: #0f172a; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; }
-    a.secondary { background: #1f2937; color: #e2e8f0; }
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --primary: #0066cc;
+      --primary-dark: #004d99;
+      --primary-light: #e6f0fa;
+      --secondary: #475569;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius: 8px;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%);
+      color: var(--gray-100);
+      min-height: 100vh;
+    }
+    .header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--gray-700);
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--white);
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .logo-subtitle {
+      font-size: 12px;
+      color: var(--gray-400);
+      font-weight: 500;
+    }
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin: 0 0 16px;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--white) 0%, var(--gray-300) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--gray-400);
+      margin: 0 auto;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--gray-600);
+    }
+    .card:hover::before {
+      opacity: 1;
+    }
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--primary-light);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .card-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--primary);
+    }
+    .card h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      color: var(--white);
+    }
+    .card p {
+      color: var(--gray-400);
+      margin: 0 0 24px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: var(--white);
+      box-shadow: 0 4px 14px 0 rgba(0, 102, 204, 0.39);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px 0 rgba(0, 102, 204, 0.5);
+    }
+    .btn-secondary {
+      background: var(--gray-700);
+      color: var(--gray-100);
+      border: 1px solid var(--gray-600);
+    }
+    .btn-secondary:hover {
+      background: var(--gray-600);
+      border-color: var(--gray-500);
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 80px;
+      padding-top: 48px;
+      border-top: 1px solid var(--gray-700);
+    }
+    .feature {
+      text-align: center;
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--gray-700);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .feature h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: var(--white);
+    }
+    .feature p {
+      font-size: 14px;
+      color: var(--gray-400);
+      margin: 0;
+      line-height: 1.5;
+    }
+    .footer {
+      text-align: center;
+      padding: 32px 24px;
+      color: var(--gray-500);
+      font-size: 14px;
+      border-top: 1px solid var(--gray-800);
+    }
+    @@media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      .features { grid-template-columns: 1fr; gap: 24px; }
+      .main { padding: 48px 16px; }
+    }
   </style>
 </head>
 <body>
-  <div class="hero">
-    <div class="card">
+  <header class="header">
+    <div class="header-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">P</div>
+        <div>
+          <div class="logo-text">ParkingPortal</div>
+          <div class="logo-subtitle">Municipal Services</div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="hero">
       <h1>Parking Permit Portal</h1>
-      <p>Submit a new parking permit application or review existing submissions.</p>
-      <div class="actions">
-        <a class="button" href="/apply">Apply for a permit</a>
-        <a class="button secondary" href="/admin">Admin review</a>
+      <p>Streamlined digital services for parking permit applications. Submit, track, and manage your permits with ease.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h2>Apply for a Permit</h2>
+        <p>Submit a new parking permit application online. Fast, secure, and convenient process for citizens.</p>
+        <a href="/apply" class="btn btn-primary">
+          Start Application
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+        </div>
+        <h2>Admin Dashboard</h2>
+        <p>Review and manage permit applications. Approve, reject, and track all submissions in one place.</p>
+        <a href="/admin" class="btn btn-secondary">
+          Access Dashboard
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
       </div>
     </div>
-  </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gray-300)" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h3>Secure</h3>
+        <p>Enterprise-grade security with Keycloak authentication</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gray-300)" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <h3>Fast</h3>
+        <p>Quick application processing with real-time status updates</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--gray-300)" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <h3>Reliable</h3>
+        <p>Built on robust infrastructure with audit trail</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 Municipal Parking Services. All rights reserved.</p>
+  </footer>
 </body>
 </html>
