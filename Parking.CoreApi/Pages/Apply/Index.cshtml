@@ -1,0 +1,122 @@
+@page "/apply"
+@model Parking.CoreApi.Pages.Apply.IndexModel
+@using Parking.CoreApi.Models
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parking Application</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
+    .wrap { max-width: 980px; margin: 48px auto; padding: 0 16px; }
+    .card { background: #fff; padding: 24px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    h1 { margin: 0 0 8px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .actions { margin-top: 16px; }
+    button { background: #1f2937; color: #fff; border: 0; border-radius: 6px; padding: 10px 16px; cursor: pointer; }
+    .note { color: #475569; margin-top: 6px; }
+    .error { color: #b91c1c; font-size: 12px; display: block; margin-top: 6px; }
+    .success { background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 10px 12px; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+    th { background: #f1f5f9; }
+    @@media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+      .top { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card top">
+      <div>
+        <h1>Parking Permit Application</h1>
+        <div class="note">Logged in as <strong>@Model.CitizenId</strong></div>
+      </div>
+      <a href="/logout"><button type="button">Logout</button></a>
+    </div>
+
+    <div class="card">
+      <h2>Apply</h2>
+      <p class="note">Submit a new application. It will be sent immediately for review.</p>
+
+      @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+      {
+        <div class="success">@Model.SuccessMessage</div>
+      }
+
+      <form method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="error"></div>
+        <div class="grid">
+          <div>
+            <label asp-for="Input.FullName"></label>
+            <input asp-for="Input.FullName" />
+            <span class="error" asp-validation-for="Input.FullName"></span>
+          </div>
+          <div>
+            <label asp-for="Input.Email"></label>
+            <input asp-for="Input.Email" />
+            <span class="error" asp-validation-for="Input.Email"></span>
+          </div>
+          <div>
+            <label asp-for="Input.Address"></label>
+            <input asp-for="Input.Address" />
+            <span class="error" asp-validation-for="Input.Address"></span>
+          </div>
+          <div>
+            <label asp-for="Input.Phone"></label>
+            <input asp-for="Input.Phone" />
+            <span class="error" asp-validation-for="Input.Phone"></span>
+          </div>
+          <div>
+            <label asp-for="Input.PlateNumber"></label>
+            <input asp-for="Input.PlateNumber" />
+            <span class="error" asp-validation-for="Input.PlateNumber"></span>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">Submit Application</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>My Applications</h2>
+      @if (!Model.MyApplications.Any())
+      {
+        <p class="note">No applications yet.</p>
+      }
+      else
+      {
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Status</th>
+              <th>Plate</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+          @foreach (var app in Model.MyApplications)
+          {
+            <tr>
+              <td>@app.Id</td>
+              <td>@app.Status</td>
+              <td>@app.PlateNumber</td>
+              <td>@app.CreatedAt.UtcDateTime.ToString("u")</td>
+            </tr>
+          }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</body>
+</html>
